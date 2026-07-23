@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>琛光E1 Mini 无人机开发与编程课程</title>
+<style>
+:root{
+  --bg:#f0f2f5;--card:#fff;--primary:#2563eb;--primary-light:#dbeafe;
+  --accent:#f59e0b;--green:#10b981;--purple:#8b5cf6;--red:#ef4444;--cyan:#0ea5e9;
+  --text:#1e293b;--text-light:#64748b;--border:#e2e8f0;--radius:12px;
+  --sidebar-w:280px;--code-bg:#1e293b;--code-text:#e2e8f0;
+  --m1:#2563eb;--m2:#ea580c;--m3:#059669;--m4:#7c3aed;--m5:#dc2626;--m6:#0284c7;
+}
+[data-theme="dark"]{
+  --bg:#0f172a;--card:#1e293b;--text:#e2e8f0;--text-light:#94a3b8;--border:#334155;
+  --primary-light:#1e3a5f;--code-bg:#0f172a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","PingFang SC","Helvetica Neue",sans-serif;background:var(--bg);color:var(--text);line-height:1.8;transition:background .3s,color .3s}
+
+/* ===== Top Bar ===== */
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;z-index:200;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.topbar .logo{font-weight:bold;font-size:1.05em;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.topbar .logo .drone-icon{font-size:1.3em}
+.search-box{flex:1;max-width:400px;position:relative}
+.search-box input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.88em;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--primary)}
+.search-box .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-light);font-size:.9em}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn-icon{width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1em;transition:all .2s}
+.btn-icon:hover{border-color:var(--primary);color:var(--primary)}
+.progress-mini{font-size:.8em;color:var(--text-light);white-space:nowrap}
+.progress-mini b{color:var(--primary)}
+
+/* ===== Sidebar ===== */
+.sidebar{position:fixed;top:56px;left:0;bottom:0;width:var(--sidebar-w);background:var(--card);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0;z-index:100;transition:transform .3s}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.sidebar-section{padding:0 16px;margin-bottom:8px}
+.sidebar-label{font-size:.72em;color:var(--text-light);text-transform:uppercase;letter-spacing:1px;padding:8px 12px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:.88em;transition:all .15s;text-decoration:none;color:var(--text)}
+.nav-item:hover{background:var(--primary-light)}
+.nav-item.active{background:var(--primary);color:#fff}
+.nav-item .nav-icon{width:20px;text-align:center;font-size:1.1em}
+.nav-item .nav-text{flex:1}
+.nav-item .nav-count{font-size:.75em;opacity:.7;background:rgba(0,0,0,.06);padding:1px 7px;border-radius:10px}
+.nav-item.active .nav-count{background:rgba(255,255,255,.2)}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);margin-top:8px}
+.progress-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:3px;transition:width .5s}
+.progress-text{font-size:.78em;color:var(--text-light);margin-top:4px}
+
+/* ===== Main Content ===== */
+.main{margin-left:var(--sidebar-w);margin-top:56px;padding:0;transition:margin .3s}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 40%,#2563eb 100%);color:#fff;padding:48px 40px;text-align:center}
+.hero h1{font-size:2em;margin-bottom:8px;letter-spacing:1px}
+.hero .subtitle{font-size:1.05em;opacity:.85;margin-bottom:16px}
+.hero .badge{display:inline-block;padding:6px 18px;background:rgba(255,255,255,.12);border-radius:20px;font-size:.85em;margin-bottom:24px}
+.hero-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.hero-stat{background:rgba(255,255,255,.1);border-radius:10px;padding:12px 24px;min-width:100px}
+.hero-stat .num{font-size:1.6em;font-weight:bold;display:block}
+.hero-stat .label{font-size:.78em;opacity:.8}
+
+/* Content sections */
+.section{padding:32px 40px;max-width:1000px;margin:0 auto;scroll-margin-top:72px}
+.section-title{font-size:1.4em;font-weight:bold;margin-bottom:20px;padding-left:14px;border-left:5px solid var(--primary);display:flex;align-items:center;gap:8px}
+
+/* Overview cards */
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.overview-card{background:var(--card);border-radius:var(--radius);padding:18px;border:1px solid var(--border);cursor:pointer;transition:all .2s;border-left:4px solid var(--primary)}
+.overview-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+.overview-card .icon{font-size:1.8em;margin-bottom:6px}
+.overview-card .title{font-weight:bold;font-size:1em;margin-bottom:3px}
+.overview-card .desc{font-size:.8em;color:var(--text-light)}
+
+/* Platform table */
+.platform-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:20px}
+.platform-card h3{font-size:1.1em;margin-bottom:12px;color:var(--primary)}
+.platform-card table{width:100%;border-collapse:collapse;font-size:.88em}
+.platform-card th{text-align:left;padding:8px 12px;color:var(--text-light);width:140px;vertical-align:top}
+.platform-card td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.platform-card tr:last-child td{border-bottom:none}
+
+/* Module */
+.module{margin-bottom:36px;scroll-margin-top:72px}
+.module-header{border-radius:var(--radius) var(--radius) 0 0;padding:16px 20px;color:#fff;display:flex;align-items:center;gap:12px}
+.module-header h2{font-size:1.2em}
+.module-header .info{font-size:.8em;opacity:.9;margin-left:auto}
+.mod1 .module-header{background:linear-gradient(135deg,var(--m1),#3b82f6)}
+.mod2 .module-header{background:linear-gradient(135deg,var(--m2),#f97316)}
+.mod3 .module-header{background:linear-gradient(135deg,var(--m3),#10b981)}
+.mod4 .module-header{background:linear-gradient(135deg,var(--m4),#8b5cf6)}
+.mod5 .module-header{background:linear-gradient(135deg,var(--m5),#ef4444)}
+.mod6 .module-header{background:linear-gradient(135deg,var(--m6),#0ea5e9)}
+.module-body{background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);overflow:hidden}
+
+/* Lesson card (collapsible) */
+.lesson{border-bottom:1px solid var(--border);transition:background .15s}
+.lesson:last-child{border-bottom:none}
+.lesson.hidden{display:none}
+.lesson-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;user-select:none;transition:background .15s}
+.lesson-header:hover{background:var(--bg)}
+.lesson-num{color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:.85em;flex-shrink:0}
+.mod1 .lesson-num{background:var(--m1)}.mod2 .lesson-num{background:var(--m2)}.mod3 .lesson-num{background:var(--m3)}
+.mod4 .lesson-num{background:var(--m4)}.mod5 .lesson-num{background:var(--m5)}.mod6 .lesson-num{background:var(--m6)}
+.lesson-title{font-weight:600;font-size:.95em;flex:1}
+.lesson-tag{font-size:.7em;padding:3px 9px;border-radius:12px;white-space:nowrap}
+.mod1 .lesson-tag{background:var(--primary-light);color:var(--m1)}
+.mod2 .lesson-tag{background:#fef3c7;color:#92400e}
+.mod3 .lesson-tag{background:#d1fae5;color:#065f46}
+.mod4 .lesson-tag{background:#ede9fe;color:#5b21b6}
+.mod5 .lesson-tag{background:#fee2e2;color:#991b1b}
+.mod6 .lesson-tag{background:#e0f2fe;color:#075985}
+[data-theme="dark"] .lesson-tag{opacity:.8}
+.lesson-toggle{font-size:.8em;color:var(--text-light);transition:transform .2s;width:20px;text-align:center}
+.lesson.expanded .lesson-toggle{transform:rotate(90deg)}
+.lesson-body{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 16px}
+.lesson.expanded .lesson-body{max-height:2000px;padding:0 16px 14px}
+.lesson-content{padding-top:8px}
+.lesson-content h4{font-size:.85em;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.mod1 .lesson-content h4{color:var(--m1)}.mod2 .lesson-content h4{color:var(--m2)}.mod3 .lesson-content h4{color:var(--m3)}
+.mod4 .lesson-content h4{color:var(--m4)}.mod5 .lesson-content h4{color:var(--m5)}.mod6 .lesson-content h4{color:var(--m6)}
+.lesson-content p{font-size:.86em;margin-bottom:6px;color:var(--text)}
+.lesson-content ul{list-style:none;padding-left:0}
+.lesson-content ul li{font-size:.84em;color:var(--text);padding-left:16px;position:relative;margin-bottom:3px}
+.lesson-content ul li::before{content:"▸";position:absolute;left:0;color:var(--text-light)}
+.lesson-content ol{padding-left:20px}
+.lesson-content ol li{font-size:.84em;color:var(--text);margin-bottom:3px}
+.lesson-content code.inline{background:var(--bg);padding:1px 6px;border-radius:4px;font-size:.85em;font-family:Consolas,monospace}
+
+/* Code block */
+.code-block{background:var(--code-bg);color:var(--code-text);border-radius:8px;padding:12px 16px;margin:8px 0;font-family:Consolas,"Courier New",monospace;font-size:.8em;overflow-x:auto;line-height:1.6;white-space:pre}
+.code-block .comment{color:#64748b}.code-block .keyword{color:#c084fc}.code-block .string{color:#86efac}.code-block .number{color:#fbbf24}
+
+/* Time chips */
+.time-block{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.time-chip{font-size:.72em;padding:3px 9px;border-radius:8px;background:var(--bg);color:var(--text-light);border:1px solid var(--border)}
+
+/* Milestone */
+.milestone{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7;border-radius:var(--radius);padding:12px 16px;margin:12px 0;font-size:.86em}
+[data-theme="dark"] .milestone{background:linear-gradient(135deg,#064e3b,#065f46);border-color:#10b981}
+.milestone strong{color:#065f46}
+[data-theme="dark"] .milestone strong{color:#6ee7b7}
+
+/* Tip / Warn */
+.tip-box{background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius);padding:12px 16px;margin:12px 0;font-size:.86em}
+[data-theme="dark"] .tip-box{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3)}
+.tip-box strong{color:#92400e}
+[data-theme="dark"] .tip-box strong{color:#fbbf24}
+.warn-box{background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:12px 16px;margin:12px 0;font-size:.86em}
+[data-theme="dark"] .warn-box{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}
+.warn-box strong{color:#991b1b}
+[data-theme="dark"] .warn-box strong{color:#fca5a5}
+
+/* Assessment */
+.assess-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:24px}
+.assess-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;border-top:4px solid var(--primary)}
+.assess-card .pct{font-size:1.5em;font-weight:bold;color:var(--primary)}
+.assess-card h4{margin-bottom:6px}.assess-card p{font-size:.84em;color:var(--text-light)}
+
+/* Footer */
+.footer{text-align:center;padding:32px;color:var(--text-light);font-size:.82em;border-top:1px solid var(--border);margin-top:32px}
+
+/* Back to top */
+.back-top{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;font-size:1.2em;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(37,99,235,.3);opacity:0;visibility:hidden;transition:all .3s;z-index:150}
+.back-top.show{opacity:1;visibility:visible}
+.back-top:hover{transform:translateY(-2px)}
+
+/* Mobile */
+.mobile-toggle{display:none}
+@media(max-width:900px){
+  :root{--sidebar-w:0px}
+  .sidebar{transform:translateX(-100%);width:280px;z-index:150;box-shadow:2px 0 12px rgba(0,0,0,.1)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .mobile-toggle{display:flex}
+  .hero{padding:32px 20px}
+  .hero h1{font-size:1.5em}
+  .section{padding:20px 16px}
+  .search-box{max-width:200px}
+}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:90}
+.overlay.show{display:block}
+@media(max-width:900px){.overlay.show{display:block}}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <button class="btn-icon mobile-toggle" onclick="toggleSidebar()" title="菜单">☰</button>
+  <div class="logo"><span class="drone-icon">🚁</span> E1 Mini 课程</div>
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="搜索课程内容…" oninput="handleSearch(this.value)">
+  </div>
+  <div class="topbar-actions">
+    <span class="progress-mini">已完成 <b id="progressCount">0</b>/40 课</span>
+    <button class="btn-icon" onclick="toggleTheme()" id="themeBtn" title="切换主题">🌙</button>
+    <button class="btn-icon" onclick="window.print()" title="打印">🖨</button>
+  </div>
+</div>
+
+<!-- Overlay for mobile -->
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">导航</div>
+    <a class="nav-item" data-target="overview"><span class="nav-icon">📋</span><span class="nav-text">课程概览</span></a>
+    <a class="nav-item" data-target="platform"><span class="nav-icon">🔧</span><span class="nav-text">平台详解</span></a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">教学模块</div>
+    <a class="nav-item" data-target="module1"><span class="nav-icon">🧭</span><span class="nav-text">一 · 基础入门</span><span class="nav-count">5</span></a>
+    <a class="nav-item" data-target="module2"><span class="nav-icon">🔧</span><span class="nav-text">二 · 硬件制作</span><span class="nav-count">11</span></a>
+    <a class="nav-item" data-target="module3"><span class="nav-icon">🚀</span><span class="nav-text">三 · 调试首飞</span><span class="nav-count">6</span></a>
+    <a class="nav-item" data-target="module4"><span class="nav-icon">💻</span><span class="nav-text">四 · Arduino编程</span><span class="nav-count">8</span></a>
+    <a class="nav-item" data-target="module5"><span class="nav-icon">⚙️</span><span class="nav-text">五 · 固件开发</span><span class="nav-count">6</span></a>
+    <a class="nav-item" data-target="module6"><span class="nav-icon">🐍</span><span class="nav-text">六 · Python控制</span><span class="nav-count">4</span></a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">更多</div>
+    <a class="nav-item" data-target="assessment"><span class="nav-icon">📊</span><span class="nav-text">评估方案</span></a>
+    <a class="nav-item" data-target="tips"><span class="nav-icon">💡</span><span class="nav-text">教学建议</span></a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="progress-text">学习进度</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" style="margin-top:6px" id="progressLabel">点击课程标记为已学</div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+<!-- Hero -->
+<div class="hero">
+  <h1>🚁 琛光E1 Mini 无人机开发与编程课程</h1>
+  <p class="subtitle">从焊接到飞控源码 · 从零打造你的ESP32无人机</p>
+  <div class="badge">ESP32 开源无人机 | Arduino + Python 双语言教学</div>
+  <div class="hero-stats">
+    <div class="hero-stat"><span class="num">40</span><span class="label">总课时</span></div>
+    <div class="hero-stat"><span class="num">1.5h</span><span class="label">单节时长</span></div>
+    <div class="hero-stat"><span class="num">6</span><span class="label">教学模块</span></div>
+    <div class="hero-stat"><span class="num">60h</span><span class="label">总学时</span></div>
+  </div>
+</div>
+
+<!-- Overview -->
+<div class="section" id="overview">
+  <h2 class="section-title">📋 课程概览</h2>
+  <p style="margin-bottom:18px;font-size:.9em;color:var(--text-light)">
+    本课程以 <strong>琛光E1 Mini ESP32开源无人机</strong> 为教学平台，专为初一学生设计。
+    每名学生将<strong>亲手从零打造一台属于自己的无人机</strong>——从PCB焊接、电机安装，到用Arduino修改飞控源码（CF-Drone），再到用Python通过MAVLink协议实现外部编程控制。
+    课程贯穿「造出来→飞起来→改代码→写程序」完整链路。
+  </p>
+  <div class="overview-grid" id="overviewGrid"></div>
+  <div class="tip-box"><strong>⏱ 每节课（90分钟）标准时间分配：</strong><br>① 课前回顾与导入（10分钟）→ ② 核心知识讲解（15-25分钟）→ ③ 动手实践/编程（40-50分钟）→ ④ 讨论/调试/展示（12分钟）→ ⑤ 总结与课后任务（8分钟）</div>
+</div>
+
+<!-- Platform -->
+<div class="section" id="platform">
+  <h2 class="section-title">🔧 平台详解</h2>
+  <div class="platform-card"><h3>📋 硬件规格</h3><table>
+    <tr><th>主控芯片</th><td>ESP32 DevKit V1（30Pin，双核240MHz，内置Wi-Fi+蓝牙）</td></tr>
+    <tr><th>姿态传感器</th><td>MPU-6500 六轴陀螺仪+加速度计（I2C接口）</td></tr>
+    <tr><th>电机</th><td>8520空心杯电机 × 4（3-3.7V，约4-5万转/分）</td></tr>
+    <tr><th>螺旋桨</th><td>65mm/66mm/75mm（对角同向，正反桨配对）</td></tr>
+    <tr><th>电池</th><td>1S航模锂聚合物电池（3.7-4.2V，高放电倍率）</td></tr>
+    <tr><th>供电管理</th><td>ME6118A33PG LDO稳压 + 470μF滤波电容</td></tr>
+    <tr><th>PCB</th><td>嘉立创打样，1.6mm厚度，拼板设计（主控板+电机座+支架）</td></tr>
+  </table></div>
+  <div class="platform-card"><h3>💻 软件与固件</h3><table>
+    <tr><th>飞控固件</th><td>CF-Drone（Arduino开发，开源 GitHub: songge8/CF-Drone）</td></tr>
+    <tr><th>固件源码</th><td>CF-Drone.ino(主程序) / imu.ino(传感器) / control.ino(飞行控制) / pid.h(PID算法) / motors.ino(电机) / web_rc.ino(网页遥控) / cli.ino(调试命令) / mavlink.ino(MAVLink) / wifi.ino / battery.ino / safety.ino 等</td></tr>
+    <tr><th>控制方式①</th><td>网页遥控器（手机连Wi-Fi「Drone_WIFI」→ 浏览器 http://192.168.4.1:8080）</td></tr>
+    <tr><th>控制方式②</th><td>QGC App（MAVLink协议，Ground Control Station）</td></tr>
+    <tr><th>控制方式③</th><td>SBUS实体遥控器（主板预留3P接口，GPIO4）</td></tr>
+    <tr><th>控制方式④</th><td>Python外部编程（pymavlink库，通过Wi-Fi发送MAVLink指令）</td></tr>
+    <tr><th>CLI调试命令</th><td>ca(校准陀螺仪) / ps(查看状态) / mfl-mfr-mrl-mrr(电机测试) / cr(遥控校准)</td></tr>
+    <tr><th>开发工具</th><td>Arduino IDE（固件开发）+ Python 3.x（外部控制）</td></tr>
+  </table></div>
+</div>
+
+<!-- Modules container - rendered by JS -->
+<div id="modulesContainer"></div>
+
+<!-- Assessment -->
+<div class="section" id="assessment">
+  <h2 class="section-title">📊 课程评估方案</h2>
+  <p style="margin-bottom:18px;font-size:.9em;color:var(--text-light)">采用「过程性评价 + 阶段考核 + 综合项目」三维评价体系。</p>
+  <div class="assess-grid">
+    <div class="assess-card"><div class="pct">25%</div><h4>过程性评价</h4><p>课堂参与度、焊接质量、课后任务完成度、安全规范执行。每5课阶段评分。</p></div>
+    <div class="assess-card" style="border-top-color:var(--accent)"><div class="pct" style="color:var(--accent)">25%</div><h4>阶段考核</h4><p>模块二：硬件组装质量（第16课）<br>模块三：首飞挑战赛（第22课）<br>模块五：固件修改展示（第36课）</p></div>
+    <div class="assess-card" style="border-top-color:var(--green)"><div class="pct" style="color:var(--green)">20%</div><h4>编程能力</h4><p>Arduino编程作业质量（模块四）+ Python控制程序完成度（模块六）。评估代码质量、逻辑正确性和调试能力。</p></div>
+    <div class="assess-card" style="border-top-color:var(--red)"><div class="pct" style="color:var(--red)">30%</div><h4>综合项目展示</h4><p>项目完成度、技术难度、创新性、代码质量、展示表达。邀请家长/教师观摩。</p></div>
+  </div>
+</div>
+
+<!-- Tips -->
+<div class="section" id="tips">
+  <h2 class="section-title">💡 教学建议与注意事项</h2>
+  <div class="warn-box"><strong>⚠️ 1. 安全三原则（不可妥协）</strong><br>①焊接时佩戴护目镜，烙铁放回支架确认稳固<br>②电池充电必须有人在场，鼓包/发热立即隔离停用<br>③调试阶段必须摘掉所有桨叶；飞行时安装桨叶保护罩；飞行高度不超过50cm；教师随时准备切断电源</div>
+  <div class="tip-box"><strong>2. 焊接教学的关键</strong><br>第7课（焊接练习）是最关键的入门课。建议准备充足的废板/洞洞板供练习，不要直接在E1 Mini PCB上焊第一焊。先练手法，再焊真机。每位学生焊完后必须用万用表逐点检测，通过后才可通电。</div>
+  <div class="tip-box"><strong>3. 备件准备</strong><br>电机和桨叶是易损件，建议多备50%的8520电机和桨叶。ESP32开发板建议多备2-3块。建议准备1-2台教师预装好的E1 Mini作为「标准参考机」，用于对比调试。</div>
+  <div class="tip-box"><strong>4. Arduino C语言教学策略</strong><br>初一学生学C语言有一定挑战。教学策略：①每个概念都配无人机相关案例；②每节课留出充足上机编程时间；③善用串口监视器作为即时反馈工具；④对进度慢的学生提供课后练习和一对一辅导。</div>
+  <div class="tip-box"><strong>5. 源码阅读策略</strong><br>CF-Drone固件对学生来说是第一个大型真实项目源码。教学策略：①先看文件名猜功能→再看代码确认；②不要逐行讲解，抓住关键函数和数据流；③用「找宝藏」游戏化方式；④修改从小处着手，建立信心后再深入。</div>
+  <div class="tip-box"><strong>6. 课程弹性调整建议</strong><br>如果学生编程基础较好，可压缩模块四至6节课（合并23-24、25-26），将多出的2节课分配给模块五。如果焊接进度慢，可适当延长模块二至12课。模块五（固件开发）是核心特色，不建议压缩。</div>
+</div>
+
+<div class="footer">
+  <p>琛光E1 Mini 无人机开发与编程课程 · 40课时完整教学设计</p>
+  <p>面向初一学生 · 总学时 60 小时 · ESP32开源无人机平台</p>
+  <p>Arduino C + Python 双语言教学 | 设计日期：2026年7月</p>
+</div>
+
+</div><!-- end main -->
+
+<button class="back-top" id="backTop" onclick="scrollToTop()">↑</button>
+
+<script>
+// ===== Course Data =====
+const modules = [
+  {id:"module1",icon:"🧭",title:"模块一：无人机基础与ESP32入门",range:"第 1-5 课",hours:"7.5h",goal:"理解飞行原理，搭建ESP32开发环境",color:"var(--m1)",lessons:[
+    {n:1,t:"无人机发展与琛光E1 Mini项目全景",tag:"理论+介绍",
+     goal:["了解无人机发展史与分类（固定翼/多旋翼/直升机）","认识琛光E1 Mini开源项目及其教学价值","明确课程目标：40节课后每人拥有一台亲手打造的、可编程的无人机"],
+     content:["无人机简史：军用靶机→消费级产品→开源DIY运动","开源硬件革命：Arduino、ESP32如何降低无人机开发门槛","琛光E1 Mini项目介绍：基于ESP32+MPU-6500的开源微型四旋翼","课程全景图：硬件制作→调试飞行→Arduino编程→固件修改→Python控制","认识核心组件：ESP32开发板、MPU-6500、8520电机、1S电池"],
+     practice:"教师展示一台已完成的E1 Mini并现场飞行演示（低空悬停）；学生传阅各组件实物；查看开源项目页面，了解BOM表和PCB文件。",
+     homework:"浏览琛光E1 Mini开源项目页面（oshwhub.com/songge8），写出3个你最感兴趣的问题。",
+     time:["导入 10min","理论 25min","实物观察+演示 40min","总结 15min"]},
+    {n:2,t:"四旋翼飞行原理：从空气动力到电机控制",tag:"理论+实验",
+     goal:["理解螺旋桨产生升力的基本原理","掌握四旋翼四个运动方向：油门/俯仰/横滚/偏航","理解E1 Mini中4个8520电机的正反转配对逻辑"],
+     content:["升力原理：螺旋桨旋转→空气向下排出→反作用力向上推","四旋翼运动控制：改变对角电机转速差实现俯仰/横滚/旋转","正反桨概念：对角电机同向旋转，相邻电机反向旋转→抵消扭矩","E1 Mini电机布局：PCB丝印标注了CW/CCW方向和线材颜色（红蓝/黑白）","为什么用空心杯电机：轻量、便宜、响应快，适合微型无人机"],
+     practice:"纸条吹气实验感受伯努利效应；用手摇小电机+螺旋桨感受推力方向；对照E1 Mini的PCB丝印，画出4个电机的旋转方向示意图。",
+     homework:"画出E1 Mini俯视图，标注4个电机的位置（前左/前右/后左/后右）、旋转方向和桨叶方向。",
+     time:["回顾 10min","理论 20min","实验 45min","总结 15min"]},
+    {n:3,t:"无人机安全规范与法律法规",tag:"理论+演练",
+     goal:["了解国内无人机飞行基本法规（实名登记、禁飞区）","掌握E1 Mini安全操作规程（焊接安全+飞行安全+电池安全）","建立课堂安全公约"],
+     content:["法规简介：无人机实名登记、禁飞区/限飞区、微型无人机相关规定","<strong>焊接安全</strong>：通风环境、护目镜、烙铁支架、烫伤处理","<strong>电池安全</strong>：1S锂电池过充/过放/短路的危险，充电必须有人在场","<strong>飞行安全</strong>：摘桨调试→低空测试→逐步加高，安装桨叶保护罩","课堂安全公约：6条铁律（护目镜/保护罩/低空/有人监督/电池监控/异常即停）"],
+     practice:"情景演练：①焊接时不小心烫到手指→正确处理流程 ②飞行中电机突然异常响声→应急处置 ③电池鼓包→正确处置。全班签署安全公约。",
+     homework:"熟记6条安全铁律，家长签字确认安全公约。",
+     time:["回顾 10min","法规+安全 25min","情景演练 40min","总结 15min"]},
+    {n:4,t:"ESP32开发板认识与Arduino IDE安装",tag:"理论+实操",
+     goal:["认识ESP32开发板的引脚布局和关键特性","完成Arduino IDE安装及ESP32开发板支持包配置","用USB连接ESP32并确认串口识别"],
+     content:["ESP32特性：双核240MHz、内置Wi-Fi+蓝牙、30个GPIO、支持I2C/SPI/UART","30Pin引脚布局：注意区分ESP32 / ESP32-C3 / ESP32-S3（本项目需无后缀ESP32）","Arduino IDE安装：下载→安装→添加ESP32开发板管理器URL→安装board包","USB驱动安装：CH340/CP2102驱动（取决于开发板型号）","串口识别：设备管理器中查看COM端口号"],
+     practice:"每位学生安装Arduino IDE；配置ESP32开发板支持；USB连接ESP32；在IDE中选择正确型号和端口；打开串口监视器确认通信正常。",
+     homework:"在Arduino IDE中找到ESP32开发板的所有示例程序（File→Examples→ESP32），浏览有哪些功能。",
+     time:["回顾 10min","讲解 20min","安装配置 45min","总结 15min"]},
+    {n:5,t:"ESP32编程初体验：LED闪烁与串口通信",tag:"实操编程",
+     goal:["编写并烧录第一个Arduino程序","理解setup()和loop()函数结构","掌握Serial串口输出调试信息"],
+     content:["Arduino程序结构：setup()（执行一次）+ loop()（循环执行）","GPIO控制：pinMode() / digitalWrite()","延时函数：delay(ms)","串口通信：Serial.begin(115200) + Serial.println(\"文本\")"],
+     practice:"学生编写上述代码→编译→上传到ESP32→观察LED闪烁→打开串口监视器（波特率115200）查看输出。",
+     homework:"修改程序：让LED以摩斯密码方式闪烁你的姓名首字母（S=短闪3次，O=长闪3次）。",
+     time:["回顾 10min","理论 15min","编程+烧录 50min","总结 15min"],
+     code:`// 第一个ESP32程序：LED闪烁 + 串口输出
+<span class="keyword">void</span> setup() {
+  Serial.begin(<span class="number">115200</span>);
+  pinMode(<span class="number">2</span>, OUTPUT);
+  Serial.println(<span class="string">"E1 Mini 控制器启动！"</span>);
+}
+<span class="keyword">void</span> loop() {
+  digitalWrite(<span class="number">2</span>, HIGH);
+  Serial.println(<span class="string">"LED亮"</span>);
+  delay(<span class="number">500</span>);
+  digitalWrite(<span class="number">2</span>, LOW);
+  Serial.println(<span class="string">"LED灭"</span>);
+  delay(<span class="number">500</span>);
+}`}
+  ]},
+  {id:"module2",icon:"🔧",title:"模块二：硬件制作——亲手打造E1 Mini",range:"第 6-16 课",hours:"16.5h",goal:"每人完成一台E1 Mini的焊接组装与固件刷写",color:"var(--m2)",lessons:[
+    {n:6,t:"E1 Mini物料清单解读与PCB认识",tag:"理论+实物",
+     goal:["读懂E1 Mini BOM表，识别所有元器件","理解PCB拼板结构（主控板+电机座+电池支架）","了解嘉立创PCB打样流程"],
+     content:["BOM表解读：每个元件的名称、型号、封装、数量","PCB拼板结构：主控板（中间）+ 4个电机座/支架（四角）→ 需要用水口钳分割","关键元件：ESP32排母座、MPU-6500排母、ME6118A33PG稳压芯片、电容、电阻","嘉立创打样流程：上传Gerber→选择1.6mm厚度→下单"],
+     practice:"每人领取一套物料，对照BOM表逐一清点；认识贴片元件封装尺寸（0603/0805）；观察PCB丝印，找到主控板与电机座的分割线。",
+     homework:"用表格整理物料清单：元件名→数量→在PCB上的位置（参考丝印编号）。",
+     time:["回顾 10min","BOM讲解 20min","清点物料 45min","总结 15min"]},
+    {n:7,t:"焊接基本功：工具认识与废板练习",tag:"实操训练",
+     goal:["掌握电烙铁的正确握法、温度设置和安全操作","在废板/洞洞板上完成贴片元件焊接练习","学会识别虚焊、短路、连锡等常见问题"],
+     content:["烙铁温度设置：320-350°C（贴片焊接）","焊接五步法：预热→送锡→熔锡→移锡→移烙铁","贴片元件焊接技巧：先在一侧焊盘上锡→用镊子放元件→焊固定→焊另一侧","常见问题：虚焊、连锡、冷焊","助焊剂（松香）的使用：增加焊锡流动性"],
+     practice:"在洞洞板或废旧PCB上练习：焊接0603电阻→0805电容→排针；用万用表检测每个焊点是否导通；教师逐一检查焊接质量并反馈。",
+     homework:"观看B站「琛光E1 Mini组装教程」视频，了解完整焊接流程。",
+     time:["回顾 5min","讲解 15min","焊接练习 55min","总结 15min"],
+     warn:"焊接全程佩戴护目镜；烙铁放回支架时确认稳固；保持桌面通风；烙铁温度可达400°C，严禁触碰金属部分。"},
+    {n:8,t:"焊接主控板（一）：贴片电阻电容",tag:"实操焊接",
+     goal:["在E1 Mini主控板上焊接所有0603/0805贴片元件","按照从小到大、从低到高的焊接顺序操作","每焊完一批用万用表检测导通性"],
+     content:["焊接顺序原则：最小元件→较大元件→插接件（先贴片后插装）","0603电阻焊接：C9/C8/C6/C1/C2/C3/C4（100nF）、R10（33K）","0805电容焊接：C5/C7（22μF）","470μF电解电容焊接：注意极性（长脚正极，PCB标注+号）","LED焊接（可选）：注意正负极方向"],
+     practice:"学生按顺序焊接主控板上所有贴片元件；教师巡场指导焊接手法；每焊完5个元件，用万用表蜂鸣档检测焊点导通性。",
+     homework:"检查所有已焊元件的位置和方向，记录有无需要补焊的点。",
+     time:["回顾 5min","讲解 10min","焊接实操 60min","总结 15min"]},
+    {n:9,t:"焊接主控板（二）：稳压芯片与排针座",tag:"实操焊接",
+     goal:["焊接ME6118A33PG稳压芯片（SOT-89封装）","焊接ESP32排母座和MPU-6500排母座","完成主控板全部焊接工作"],
+     content:["ME6118A33PG焊接：SOT-89三脚封装，注意芯片方向（1脚朝向PCB标记）","排母座焊接技巧：先焊对角两脚固定→检查垂直度→焊其余脚","ESP32排母30Pin：注意对齐，排母要完全贴合PCB","MPU-6500排母：只需焊接VCC/GND/SCL/SDA/AD0/NCS六个引脚"],
+     practice:"焊接ME6118A33PG稳压芯片；焊接ESP32 30Pin排母座；焊接MPU-6500模块排母座；全面检查焊接质量。",
+     homework:"用手机拍摄主控板正反面照片，标注每个元件位置，建立「个人无人机档案」。",
+     time:["回顾 5min","讲解 10min","焊接实操 60min","总结 15min"]},
+    {n:10,t:"MPU-6500陀螺仪模块焊接与电路检测",tag:"实操焊接",
+     goal:["完成MPU-6500模块的安装","理解陀螺仪模块与主控板的I2C通信连接","用万用表完成主控板全面电路检测"],
+     content:["MPU-6500安装方式：①贴着主控板直接焊接（减小偏差）②使用排母插接（便于更换）","I2C通信线路：VCC→3.3V / GND→地 / SCL→时钟线 / SDA→数据线","AD0引脚：设置I2C地址（接GND为0x68，接VCC为0x69）","NCS引脚：片选信号，I2C模式下接高电平"],
+     practice:"安装MPU-6500模块；用万用表逐一检测主控板：电源线是否短路→信号线是否导通→各焊点质量；填写「电路检测报告单」。",
+     homework:"整理电路检测报告，确认所有检测项全部通过后签字。",
+     time:["回顾 5min","讲解 15min","焊接+检测 55min","总结 15min"],
+     tip:"焊接完成后通电前，务必用万用表蜂鸣档检测VCC和GND之间是否短路。短路时通电会直接烧毁元件！"},
+    {n:11,t:"电机底座与电池支架组装",tag:"实操组装",
+     goal:["用水口钳分割PCB拼板","组装4个电机底座和电池支架","理解机架结构对飞行稳定性的影响"],
+     content:["PCB分割：沿丝印分割线用水口钳剪开，注意不要损坏主控板","电机底座作用：保护电机（失控坠机时缓冲）+ 支撑整机","电池支架：高度12mm，可放置厚度<12mm的1S电池，用皮筋固定","支架焊盘加固：用焊锡将支架连接处焊死，增加结构强度"],
+     practice:"用水口钳分割PCB；组装4个电机底座到主控板四角；安装电池支架；用焊锡加固所有支架连接处的焊盘。",
+     homework:"测量你的E1 Mini轴距（对角电机孔间距），记录并对比标准值。",
+     time:["回顾 5min","讲解 15min","组装实操 55min","总结 15min"]},
+    {n:12,t:"8520空心杯电机安装与接线",tag:"实操焊接",
+     goal:["正确安装4个8520电机到电机底座","按照PCB丝印正确焊接电机正负极线材","理解对角电机同向、相邻电机反向的配对逻辑"],
+     content:["电机固定方式：用硅胶圈固定（推荐）或热熔胶固定","电机线材颜色方案：推荐2个红蓝线+2个黑白线（便于区分正反转）","PCB丝印标注：板上有线材颜色和正负极标识，严格对照丝印焊接","对角同向原则：左前与右后同向旋转，右前与左后同向旋转","焊接要点：电机线穿过焊盘孔后再焊接（通孔焊），受力更可靠"],
+     practice:"将4个电机安装到底座；对照PCB丝印确认每根线的正负极和颜色位置；逐一焊接电机线；用万用表检测4个电机回路是否导通。",
+     homework:"记录每个位置电机的线材颜色和旋转方向，画出对照表。",
+     time:["回顾 5min","讲解 15min","安装+焊接 55min","总结 15min"]},
+    {n:13,t:"螺旋桨安装与旋向验证",tag:"实操+验证",
+     goal:["正确安装4片螺旋桨（正桨与反桨配对）","理解桨叶安装方向对推力的影响","掌握验证桨叶方向是否正确的方法"],
+     content:["桨叶规格：65mm/66mm/75mm均可，轴径需与电机匹配（1mm或1.2mm）","正桨vs反桨：正桨逆时针旋转产生向下气流，反桨顺时针旋转产生向下气流","对角桨叶方向一致：左前与右后同方向，右前与左后同方向","安装原则：电机按标识方向转动时，桨叶高的一侧在前、向下吹风","验证方法：摘掉桨叶→通电解锁电机→观察4个电机转向→装回桨叶→确认4个桨都向下吹风"],
+     practice:"辨认正反桨（标有A/B或R/L标记）；对照PCB丝印将桨叶安装到对应电机上；暂时不安装桨叶，为下一课电机测试做准备。",
+     homework:"将桨叶按正确方向排列放好，拍照记录每个位置的桨叶类型。",
+     time:["回顾 5min","讲解 15min","安装+验证 55min","总结 15min"],
+     tip:"安全原则：调试阶段（校准陀螺仪、测试电机）必须摘掉所有桨叶！只有确认一切正常后才安装桨叶飞行。"},
+    {n:14,t:"1S航模电池知识与充电安全",tag:"理论+实操",
+     goal:["理解1S锂电池参数与安全使用规范","学会使用1S平衡充电器充电","将电池正确安装到E1 Mini上"],
+     content:["1S锂电池：单节电芯，标称3.7V，满电4.2V，放电截止3.0V","放电倍率（C值）：航模电池需高倍率（30C以上），普通锂电池不行","安全规范：①不可过充(>4.2V) ②不可过放(<3.0V) ③不可短路 ④充电时必须有人在场 ⑤鼓包立即停用","1S平衡充电器使用：USB供电→插入电池→观察充电指示灯→充满后及时取下","电池安装：放入支架→用皮筋固定→连接电源线到PCB电池焊盘"],
+     practice:"用万用表测量电池电压（应在3.7-4.2V之间）；用充电器给电池充电；将电池安装到E1 Mini支架上并连接电源线。",
+     homework:"记录你的电池参数：标称电压、容量(mAh)、放电倍率(C值)、品牌型号。",
+     time:["回顾 10min","理论 20min","充电+安装 45min","总结 15min"],
+     warn:"电池安全红线：充电时必须有人在场；充电完成后立即取下电池；发现电池鼓包/发热异常/有异味→立即隔离并通知教师，禁止继续使用。"},
+    {n:15,t:"插入ESP32与MPU-6500：总装完成",tag:"实操组装",
+     goal:["将ESP32开发板插入排母座","将MPU-6500模块插入排母座","完成E1 Mini整机总装并进行最终检查"],
+     content:["ESP32插入要点：30Pin完全对齐排母→均匀按压→确认两端高度一致","MPU-6500插入要点：引脚方向正确（VCC对VCC）→轻柔插入","总装检查清单：①所有螺丝/焊点 ②电机线无松动 ③电池安装牢固 ④ESP32方向正确 ⑤MPU-6500引脚对齐","重心检查：电池位置居中，整机左右前后平衡"],
+     practice:"插入ESP32和MPU-6500；按照总装检查清单逐项检查；将整机放在桌面上检查重心平衡；拍照记录总装完成状态。",
+     homework:"完成「E1 Mini总装检查表」，每项确认后方可进入下一步固件刷写。",
+     time:["回顾 5min","检查清单 15min","总装实操 55min","总结 15min"]},
+    {n:16,t:"固件刷写：烧录CF-Drone到ESP32",tag:"实操刷写",
+     goal:["使用乐鑫Flash工具将CF-Drone固件烧录到ESP32","理解固件的概念和BIN文件的作用","验证固件烧录成功"],
+     content:["固件概念：飞控的「操作系统」——控制传感器读取、PID计算、电机输出的程序","CF-Drone固件：琛光开源飞控固件，Arduino开发，GitHub开源","刷写工具：乐鑫ESP32 Flash Download Tool","刷写参数：选择COM端口→晶振40MHz→SPI Speed 40MHz→加载BIN文件→地址0x0","验证方法：烧录后→拔插USB→手机搜索Wi-Fi「Drone_WIFI」→找到则成功"],
+     practice:"USB连接ESP32→打开Flash Download Tool→加载琛光E1_MINI固件.bin→设置参数→点击START→等待烧录完成→断电重新上电→手机搜索Drone_WIFI验证。",
+     homework:"确认手机能搜索到Drone_WIFI热点，记录Wi-Fi名称和密码（12345678）。",
+     time:["回顾 5min","讲解 15min","刷写实操 55min","总结 15min"],
+     tip:"备选方案：也可使用Arduino IDE直接编译源码并上传。需安装ESP32 Arduino支持包，打开CF-Drone.ino，选择ESP32 Dev Module，点击上传。后续模块五会学习源码修改。",
+     milestone:"🎉 里程碑：硬件制作完成！每位学生已拥有一台亲手焊接组装、刷写好固件的E1 Mini无人机。接下来就是调试和首飞！"}
+  ]},
+  {id:"module3",icon:"🚀",title:"模块三：调试与首飞",range:"第 17-22 课",hours:"9h",goal:"完成校准调试，亲手让自己的E1 Mini飞起来",color:"var(--m3)",lessons:[
+    {n:17,t:"陀螺仪六面校准实操",tag:"实操调试",
+     goal:["完成MPU-6500陀螺仪六面校准（消除零漂）","理解校准原理和每个步骤的物理含义","使用ps命令查看校准结果并判断是否合格"],
+     content:["为什么需要校准：陀螺仪存在零漂（静止时也有非零读数），影响飞行稳定性","六面校准原理：在6个不同姿态下采样，计算并补偿零漂误差","操作流程：输入命令 ca 开始校准，依次完成六个面各保持8秒"],
+     practice:"摘掉所有桨叶！手机连接Drone_WIFI→打开浏览器http://192.168.4.1:8080→点击「调试」→输入ca→按提示完成六面校准→输入ps查看结果→判断是否合格。",
+     homework:"记录校准结果（roll/pitch数值），判断是否合格并签字确认。",
+     time:["回顾 5min","原理讲解 15min","校准实操 55min","总结 15min"],
+     warn:"必须摘桨！校准期间禁止安装桨叶！",
+     steps:["输入命令 ca 开始校准","① 水平放置（底部朝下）→保持8秒","② 机头朝上（尾部朝下）→保持8秒","③ 机头朝下（尾部朝上）→保持8秒","④ 右侧朝下→保持8秒","⑤ 左侧朝下→保持8秒","⑥ 倒置放置（顶部朝下）→保持8秒","放正后输入 ps 查看结果","合格标准：roll和pitch接近0（±0.5°为正常，2°以内合格，超过5°需重新校准）"]},
+    {n:18,t:"电机单独测试与故障排查",tag:"实操调试",
+     goal:["使用mfl/mfr/mrl/mrr命令逐一测试4个电机","判断电机转向是否正确","掌握常见电机故障的排查方法"],
+     content:["电机测试命令：mfl(左前) / mfr(右前) / mrl(左后) / mrr(右后)","测试功率为30%，每个电机运转几秒后自动停止","验证要点：①电机是否转动 ②转动方向是否符合PCB丝印 ③4个电机推力是否相近","常见故障：电机不转→检查焊点虚焊；方向错误→交换正负极线材；转速不同→检查电池电压；异响→电机轴承损坏"],
+     practice:"摘掉所有桨叶！逐个测试4个电机；观察转向是否与PCB丝印一致；如有问题当场排查修复；全部通过后安装桨叶。",
+     homework:"记录4个电机的测试结果（转向正确/转速正常），确认全部合格。",
+     time:["回顾 5min","讲解 10min","电机测试 60min","总结 15min"],
+     code:`mfl  <span class="comment"># 测试左前电机 (Motor Front Left)</span>
+mfr  <span class="comment"># 测试右前电机 (Motor Front Right)</span>
+mrl  <span class="comment"># 测试左后电机 (Motor Rear Left)</span>
+mrr  <span class="comment"># 测试右后电机 (Motor Rear Right)</span>`},
+    {n:19,t:"网页遥控器连接与界面认识",tag:"实操体验",
+     goal:["连接E1 Mini Wi-Fi并打开网页遥控器","熟悉网页遥控器界面各功能区域","理解解锁/锁定机制和摇杆操作"],
+     content:["连接流程：手机/电脑搜索Wi-Fi「Drone_WIFI」→密码12345678→关闭手机流量","打开浏览器→输入 http://192.168.4.1:8080 →进入网页遥控器界面","界面功能区：①解锁/锁定按钮 ②虚拟摇杆（油门/方向/俯仰/横滚） ③调试按钮 ④状态显示","解锁机制：必须先解锁才能推油门起飞；解锁后电机怠速运转","安全机制：低电量自动锁定、失控保护自动降落"],
+     practice:"连接Wi-Fi→打开网页遥控器→熟悉各功能区域→不安装桨叶练习解锁/锁定操作→观察电机怠速转动→练习虚拟摇杆操作。",
+     homework:"熟记网页遥控器各按钮位置，准备下节课首飞。",
+     time:["回顾 5min","讲解 15min","连接+操作 55min","总结 15min"]},
+    {n:20,t:"首次解锁与低空悬停体验",tag:"实操飞行",
+     goal:["安装桨叶并完成首飞前最终检查","完成首次解锁→起飞→悬停→降落全流程","体验亲手制造的无人机升空的成就感"],
+     content:["首飞前最终检查清单：①桨叶方向正确 ②电池满电 ③陀螺仪已校准 ④电机测试通过 ⑤桨叶保护罩已安装 ⑥场地空旷无人","首飞操作流程：解锁→缓慢推油门至30-40%→无人机离地10-20cm→保持悬停→缓慢收油门降落→锁定","注意事项：①室内飞行②关闭门窗③远离脸和手指④如失控立即锁定"],
+     practice:"安装桨叶和保护罩→放平E1 Mini在地面→连接Wi-Fi→解锁→缓慢推油门→低空悬停5-10秒→缓慢降落→锁定。每位学生轮流首飞，教师全程监督。",
+     homework:"写一篇「我的E1 Mini首飞日记」，记录组装过程的感受和首飞瞬间的体验。",
+     time:["检查 10min","讲解 10min","首飞体验 55min","总结 15min"],
+     warn:"首飞安全规范：①必须在室内或无风环境 ②安装桨叶保护罩 ③飞行高度不超过50cm ④教师站旁边准备随时切断电源 ⑤如无人机向人飞去立即远离并锁定。",
+     milestone:"🎉 里程碑：首飞成功！学生亲手从零打造的E1 Mini成功起飞！这是整门课最有成就感的时刻之一。建议拍照/录像留念。"},
+    {n:21,t:"飞行参数微调：油门曲线与PID初调",tag:"实操调试",
+     goal:["理解PID参数对飞行手感的影响","使用CLI命令查看和调整飞行参数","通过实际飞行对比不同参数的效果"],
+     content:["PID参数简介：P（比例增益）→响应速度 / I（积分）→消除偏差 / D（微分）→减少震荡","查看当前参数：在调试界面输入 ps 查看roll/pitch/yaw的PID值","修改参数示例：set roll_p 3.5","参数过大：高频震荡、电机嗡嗡响","参数过小：反应迟钝、无法保持姿态"],
+     practice:"记录当前PID参数→低空悬停测试→小幅修改一个参数（如roll_p +0.5）→再次悬停测试→对比手感差异→记录最佳参数。每次只改一个参数。",
+     homework:"记录你的最佳PID参数组合，思考为什么不同无人机的PID参数不同。",
+     time:["回顾 10min","理论 15min","调试飞行 50min","总结 15min"]},
+    {n:22,t:"首飞挑战：悬停计时与基础航线",tag:"飞行挑战",
+     goal:["通过挑战赛巩固飞行操控能力","练习基础航线飞行（前进→悬停→返回）","回顾模块三所有调试知识"],
+     content:["挑战1：悬停计时——离地30cm悬停，计时最长者获胜","挑战2：定点起降——起飞→悬停3秒→降落在同一位置（误差<30cm）","挑战3：前进航线——起飞→前进1米→悬停→后退返回→降落","评分标准：稳定性 + 准确性 + 完成度"],
+     practice:"每人3次飞行机会，取最佳成绩；同学互评；颁发「首飞挑战」前三名小奖品。",
+     homework:"总结模块三调试经验，列出3个调试中遇到的问题及解决方案。",
+     time:["规则说明 10min","飞行挑战 55min","评分+总结 25min"]}
+  ]},
+  {id:"module4",icon:"💻",title:"模块四：Arduino编程与ESP32开发",range:"第 23-30 课",hours:"12h",goal:"掌握Arduino C语言，为修改飞控源码打基础",color:"var(--m4)",lessons:[
+    {n:23,t:"Arduino C语言基础：变量与运算",tag:"编程实操",
+     goal:["掌握Arduino C语言的基本语法","学会声明变量和使用基本运算符","理解数据类型：int / float / bool / String"],
+     content:["变量声明：int battery = 100; float voltage = 3.7; bool armed = false;","运算符：+ - * / %（取余）","比较运算符：== != > < >= <=","Serial输出调试：Serial.print() vs Serial.println()","串口输入：Serial.available() + Serial.readString()"],
+     practice:"学生编写上述代码→编译→上传→串口查看输出；修改参数实验不同结果。",
+     homework:"编写程序：输入飞行时间（秒），计算消耗的电量（假设每秒消耗0.5%），输出剩余电量。",
+     time:["回顾 10min","理论 15min","编程+烧录 50min","总结 15min"],
+     code:`// 无人机参数模拟器
+<span class="keyword">void</span> setup() {
+  Serial.begin(<span class="number">115200</span>);
+  <span class="keyword">int</span> batteryPercent = <span class="number">85</span>;
+  <span class="keyword">float</span> voltage = <span class="number">3.7</span> * (batteryPercent / <span class="number">100.0</span>) + <span class="number">3.0</span>;
+  <span class="keyword">bool</span> armed = (batteryPercent > <span class="number">20</span>);
+  Serial.print(<span class="string">"电量: "</span>); Serial.print(batteryPercent); Serial.println(<span class="string">"%"</span>);
+  Serial.print(<span class="string">"电压: "</span>); Serial.print(voltage); Serial.println(<span class="string">"V"</span>);
+  Serial.print(<span class="string">"可解锁: "</span>); Serial.println(armed ? <span class="string">"是"</span> : <span class="string">"否"</span>);
+}
+<span class="keyword">void</span> loop() {}`},
+    {n:24,t:"条件判断与if-else结构",tag:"编程实操",
+     goal:["掌握if / else if / else条件语句","理解逻辑运算符 &&（与）/ ||（或）/ !（非）","能编写飞行安全检查逻辑"],
+     content:["if-else语法：if (条件) { 执行 } else if { } else { }","逻辑运算符：&& (两个都满足) / || (任一满足) / ! (取反)","嵌套条件判断","switch-case语句简介"],
+     practice:"编写飞行安全检查系统程序，编译上传，串口查看输出结果。",
+     homework:"编写「故障诊断程序」：输入故障代码(1-5)，输出对应故障原因和处理建议。",
+     time:["回顾 10min","理论 15min","编程+烧录 50min","总结 15min"],
+     code:`// 飞行安全检查系统
+<span class="keyword">void</span> setup() {
+  Serial.begin(<span class="number">115200</span>);
+  <span class="keyword">int</span> battery = <span class="number">35</span>; <span class="keyword">float</span> voltage = <span class="number">3.65</span>;
+  <span class="keyword">bool</span> gyroCalibrated = <span class="keyword">true</span>;
+  <span class="keyword">if</span> (battery < <span class="number">20</span>) {
+    Serial.println(<span class="string">"⚠️ 电量不足，禁止起飞！"</span>);
+  } <span class="keyword">else if</span> (battery < <span class="number">40</span> && voltage < <span class="number">3.6</span>) {
+    Serial.println(<span class="string">"⚠️ 电量偏低，仅限低空飞行"</span>);
+  } <span class="keyword">else if</span> (!gyroCalibrated) {
+    Serial.println(<span class="string">"⚠️ 陀螺仪未校准，请先校准！"</span>);
+  } <span class="keyword">else</span> {
+    Serial.println(<span class="string">"✅ 所有检查通过，可以起飞！"</span>);
+  }
+}
+<span class="keyword">void</span> loop() {}`},
+    {n:25,t:"for/while循环与数组",tag:"编程实操",
+     goal:["掌握for循环和while循环","学会使用数组存储和遍历数据","能编写模拟飞行数据处理的程序"],
+     content:["for循环：for (int i = 0; i < 10; i++) { }","while循环：while (条件) { }","数组声明：int motorSpeed[4] = {1000, 1100, 1050, 1080};","遍历数组：for (int i = 0; i < 4; i++) { Serial.println(motorSpeed[i]); }","break / continue关键字"],
+     practice:"编写电机转速平衡检测程序，编译上传，观察串口输出4个电机的偏差状态。",
+     homework:"编写程序：用数组存储10个飞行高度采样值，找出最大值、最小值和平均值。",
+     time:["回顾 10min","理论 15min","编程+烧录 50min","总结 15min"],
+     code:`// 模拟电机转速平衡检测
+<span class="keyword">int</span> motorSpeed[<span class="number">4</span>] = {<span class="number">1000</span>, <span class="number">1100</span>, <span class="number">1050</span>, <span class="number">1080</span>};
+<span class="keyword">void</span> setup() {
+  Serial.begin(<span class="number">115200</span>);
+  <span class="keyword">int</span> avg = <span class="number">0</span>;
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i < <span class="number">4</span>; i++) avg += motorSpeed[i];
+  avg /= <span class="number">4</span>;
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i < <span class="number">4</span>; i++) {
+    <span class="keyword">int</span> diff = motorSpeed[i] - avg;
+    Serial.print(<span class="string">"电机"</span>); Serial.print(i);
+    Serial.print(<span class="string">": 偏差"</span>); Serial.print(diff);
+    Serial.println(diff > <span class="number">50</span> ? <span class="string">" ⚠️异常"</span> : <span class="string">" ✓正常"</span>);
+  }
+}
+<span class="keyword">void</span> loop() {}`},
+    {n:26,t:"自定义函数与模块化编程",tag:"编程实操",
+     goal:["学会定义和调用自定义函数","理解参数传递和返回值","掌握多文件编程（.ino + .h头文件）"],
+     content:["函数定义：返回类型 函数名(参数) { 函数体 }","参数传递：值传递（副本）vs 引用传递（&）","返回值：return语句","头文件：将函数声明放在.h文件中，实现放在.ino中","这与CF-Drone固件的结构完全一致（pid.h + control.ino等）"],
+     practice:"编写「无人机工具函数库」：定义batteryPercent()计算电量、checkArmed()检查解锁条件、printStatus()打印状态信息；在setup()中调用这些函数完成完整的飞行前检查。",
+     homework:"将之前几节课的程序用函数重构，使主程序更简洁。",
+     time:["回顾 10min","理论 15min","编程+烧录 50min","总结 15min"]},
+    {n:27,t:"ESP32 GPIO控制：LED与蜂鸣器",tag:"硬件编程",
+     goal:["掌握ESP32 GPIO引脚的输出控制","实现LED不同闪烁模式和蜂鸣器报警","理解PWM调光原理"],
+     content:["GPIO输出：pinMode(pin, OUTPUT) + digitalWrite(pin, HIGH/LOW)","PWM输出：ledcSetup() + ledcAttachPin() + ledcWrite()（ESP32特有PWM API）","蜂鸣器控制：有源蜂鸣器→digitalWrite即可；无源蜂鸣器→需PWM频率控制","LED呼吸灯效果：用PWM逐步增加/降低亮度"],
+     practice:"在面包板上连接LED和蜂鸣器到ESP32 GPIO引脚；编写程序：①常亮→慢闪→快闪→呼吸灯 ②蜂鸣器发出不同频率声音 ③模拟「低电量报警」。",
+     homework:"设计LED+蜂鸣器的「无人机状态指示系统」：待机(绿灯常亮)→解锁(绿灯快闪)→飞行(蓝灯呼吸)→低电量(红灯闪+蜂鸣)。",
+     time:["回顾 10min","理论 15min","硬件+编程 50min","总结 15min"]},
+    {n:28,t:"I2C协议：读取MPU-6500原始数据",tag:"硬件编程",
+     goal:["理解I2C通信协议原理","用ESP32读取MPU-6500的陀螺仪和加速度计原始数据","理解这些数据与E1 Mini飞行的关系"],
+     content:["I2C协议：两根线（SCL时钟+SDA数据），可挂载多个设备，每个设备有地址","MPU-6500 I2C地址：0x68（AD0接GND时）","Wire库：Wire.begin() / Wire.beginTransmission(0x68) / Wire.write() / Wire.endTransmission()","数据寄存器：加速度计(0x3B-0x40) / 陀螺仪(0x43-0x48) / 温度(0x41-0x42)","这些数据正是CF-Drone固件中 imu.ino 读取的内容"],
+     practice:"用ESP32+MPU-6500读取数据；转动传感器观察数据变化。",
+     homework:"扩展程序：同时读取陀螺仪数据，打印完整的6轴数据。思考：水平放置时az约为多少？为什么？",
+     time:["回顾 10min","理论 20min","编程+测试 45min","总结 15min"],
+     code:`// 读取MPU-6500加速度计数据
+<span class="keyword">#include</span> <span class="string">&lt;Wire.h&gt;</span>
+<span class="keyword">const int</span> MPU_ADDR = <span class="number">0x68</span>;
+<span class="keyword">void</span> setup() {
+  Serial.begin(<span class="number">115200</span>);
+  Wire.begin();
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(<span class="number">0x6B</span>); Wire.write(<span class="number">0</span>); <span class="comment">// 唤醒</span>
+  Wire.endTransmission(<span class="keyword">true</span>);
+}
+<span class="keyword">void</span> loop() {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(<span class="number">0x3B</span>);
+  Wire.endTransmission(<span class="keyword">false</span>);
+  Wire.requestFrom(MPU_ADDR, <span class="number">6</span>, <span class="keyword">true</span>);
+  <span class="keyword">int16_t</span> ax = Wire.read() << <span class="number">8</span> | Wire.read();
+  <span class="keyword">int16_t</span> ay = Wire.read() << <span class="number">8</span> | Wire.read();
+  <span class="keyword">int16_t</span> az = Wire.read() << <span class="number">8</span> | Wire.read();
+  Serial.print(<span class="string">"AX:"</span>); Serial.print(ax);
+  Serial.print(<span class="string">" AY:"</span>); Serial.print(ay);
+  Serial.print(<span class="string">" AZ:"</span>); Serial.println(az);
+  delay(<span class="number">100</span>);
+}`},
+    {n:29,t:"串口通信：实时打印姿态数据",tag:"编程实操",
+     goal:["掌握串口通信的高级用法（数据格式化输出）","实现实时姿态数据可视化输出","学会用串口输入控制程序行为"],
+     content:["Serial数据格式化：Serial.print()拼接多个数据","CSV格式输出：便于后续用Python读取分析","串口输入处理：Serial.available()→Serial.readStringUntil('\\n')→字符串解析","串口绘图器：Arduino IDE的Serial Plotter功能可视化数据波形","映射函数：map()将原始传感器数据映射为角度值"],
+     practice:"编写程序：每100ms读取一次MPU-6500数据→计算俯仰角和横滚角→以CSV格式输出到串口→打开Arduino IDE的Serial Plotter观察实时波形。",
+     homework:"编写程序：通过串口输入命令控制LED（输入\"on\"开灯，\"off\"关灯，\"blink\"闪烁），为下节课自定义命令打基础。",
+     time:["回顾 10min","理论 15min","编程+测试 50min","总结 15min"]},
+    {n:30,t:"ESP32 Wi-Fi编程：创建热点与Web服务器",tag:"编程实操",
+     goal:["用ESP32创建Wi-Fi热点（AP模式）","搭建简单的Web服务器，通过浏览器控制LED","理解E1 Mini网页遥控器的底层原理"],
+     content:["Wi-Fi AP模式：WiFi.softAP(\"MyDrone\", \"12345678\")→创建热点","Web服务器：WebServer库→server.on(\"/\", handler)→server.begin()","处理HTTP请求：server.send(200, \"text/html\", \"<h1>Hello</h1>\")","URL路由：server.on(\"/led_on\", ...) / server.on(\"/led_off\", ...)","这就是E1 Mini的 web_rc.ino 和 web_rc_html.h 的工作原理"],
+     practice:"编写程序：ESP32创建Wi-Fi热点→启动Web服务器→手机连接后浏览器访问→页面显示两个按钮（ON/OFF）→点击按钮控制ESP32上的LED亮灭。这是E1 Mini网页遥控器的简化版！",
+     homework:"思考：E1 Mini的网页遥控器是怎么把摇杆位置传给ESP32的？画出数据流图。",
+     time:["回顾 10min","理论 15min","编程+测试 50min","总结 15min"],
+     milestone:"🎉 里程碑：编程基础阶段完成！学生已掌握Arduino C语言核心语法 + ESP32硬件编程（GPIO/I2C/Wi-Fi），为下一阶段修改CF-Drone飞控固件做好准备。"}
+  ]},
+  {id:"module5",icon:"⚙️",title:"模块五：飞控固件理解与定制",range:"第 31-36 课",hours:"9h",goal:"读懂CF-Drone源码，修改和扩展飞控功能",color:"var(--m5)",lessons:[
+    {n:31,t:"CF-Drone固件源码结构导读",tag:"源码导读",
+     goal:["理解CF-Drone固件的整体架构和各文件职责","理清飞控主循环的数据流：传感器→估计→控制→电机","能在源码中找到关键函数的位置"],
+     content:["CF-Drone固件源码文件结构（见代码块）","主循环数据流：imu.ino读取传感器 → estimate.ino估算姿态 → control.ino计算PID → motors.ino输出PWM","参数流：parameters.ino管理参数 → cli.ino提供修改接口 → web_rc.ino网页界面也可修改"],
+     practice:"从GitHub下载CF-Drone源码；用Arduino IDE打开CF-Drone.ino；在源码中找到：setup()函数、loop()函数、readIMU()函数、PID计算函数；画出数据流图。",
+     homework:"给每个源码文件写一句话注释，描述它的功能。",
+     time:["回顾 10min","源码导读 25min","实操探索 40min","总结 15min"],
+     code:`CF-Drone.ino       <span class="comment"># 主程序：setup() + loop()，飞控主循环</span>
+imu.ino            <span class="comment"># IMU驱动：读取MPU-6500原始数据</span>
+estimate.ino       <span class="comment"># 姿态估计：四元数融合→算出roll/pitch/yaw</span>
+control.ino        <span class="comment"># 飞行控制：根据目标姿态和当前姿态计算电机输出</span>
+pid.h              <span class="comment"># PID控制器类：P/I/D算法实现</span>
+motors.ino         <span class="comment"># 电机输出：将控制量转为PWM信号驱动4个电机</span>
+mavlink.ino        <span class="comment"># MAVLink协议：与QGC/Python通信</span>
+web_rc.ino         <span class="comment"># 网页遥控器：Wi-Fi Web服务器</span>
+web_rc_html.h      <span class="comment"># 网页HTML/CSS/JS代码</span>
+cli.ino            <span class="comment"># 命令行接口：ca/ps/mfl等调试命令</span>
+parameters.ino     <span class="comment"># 参数管理：NVS存储PID等参数</span>
+battery.ino        <span class="comment"># 电池监测：电压检测+低电保护</span>
+safety.ino         <span class="comment"># 安全保护：失控保护+迫降</span>
+rc.ino             <span class="comment"># 遥控接收：SBUS协议解码</span>
+led.ino            <span class="comment"># LED状态指示</span>
+board_config.h     <span class="comment"># 板级配置：引脚定义/参数</span>`},
+    {n:32,t:"PID控制原理与源码解读",tag:"理论+源码",
+     goal:["理解PID控制算法的工作原理","读懂pid.h中的PID控制器实现","理解PID参数如何影响飞行表现"],
+     content:["PID控制：目标值与实际值的误差→P/I/D三路计算→输出控制量","P（比例）：误差×Kp → 大误差大修正，但会超调","I（积分）：误差累积×Ki → 消除长期小偏差","D（微分）：误差变化率×Kd → 预测趋势，减少震荡","生活类比：开车保持车道（P看偏离量、I修正长期偏移、D预判方向变化）","源码解读：pid.h中的update()函数 → error = setpoint - actual → P项/I项/D项 → output = P+I+D","control.ino中3个PID环路：roll PID / pitch PID / yaw PID"],
+     practice:"打开pid.h源码，找到PID计算公式；找到control.ino中3个PID实例；在纸上推导：当无人机前倾10°时，pitch PID如何计算修正量。",
+     homework:"用自己的话解释P、I、D分别是什么意思，为什么E1 Mini需要3组PID（roll/pitch/yaw）。",
+     time:["回顾 10min","理论 25min","源码解读 40min","总结 15min"]},
+    {n:33,t:"网页遥控器代码分析与界面修改",tag:"源码+实操",
+     goal:["理解web_rc.ino和web_rc_html.h的工作原理","修改网页遥控器的HTML/CSS界面","编译修改后的固件并烧录测试"],
+     content:["web_rc.ino：创建Wi-Fi AP→启动WebServer→处理HTTP请求→解析摇杆数据","web_rc_html.h：HTML页面代码（包含CSS样式和JavaScript虚拟摇杆）","摇杆数据流：网页JS触摸事件→HTTP请求→ESP32解析→飞行控制","修改示例：改变页面颜色主题、添加标题文字、修改按钮大小","编译流程：修改源码→Arduino IDE编译→通过USB烧录到ESP32"],
+     practice:"打开web_rc_html.h→修改页面标题和颜色→修改按钮样式→在Arduino IDE中编译→烧录到E1 Mini→手机连接验证修改效果。每位同学的遥控器界面都可以不一样！",
+     homework:"继续定制你的网页遥控器界面：添加你的名字、修改配色、添加一个状态显示区域。",
+     time:["回顾 10min","源码分析 20min","修改+编译+烧录 45min","总结 15min"]},
+    {n:34,t:"自定义CLI调试命令开发",tag:"固件开发",
+     goal:["理解cli.ino中命令解析的工作原理","添加自定义调试命令","编译并测试新命令"],
+     content:["CLI架构：输入字符串→解析命令名→匹配已有命令(ca/ps/mfl等)→执行对应函数","命令注册方式：在cli.ino中找到命令处理函数，添加新的if-else分支","自定义命令示例：hi打招呼、dance控制LED跳舞"],
+     practice:"在cli.ino中添加2-3个自定义命令（如hi打招呼、dance控制LED跳舞、info显示所有参数）；编译→烧录→通过网页调试界面输入命令测试。",
+     homework:"设计一个有用的自定义命令：比如「diag」一键诊断所有传感器状态并输出报告。",
+     time:["回顾 10min","源码分析 15min","开发+编译+测试 50min","总结 15min"],
+     code:`// 在cli.ino中添加自定义命令
+<span class="keyword">else if</span> (cmd == <span class="string">"hi"</span>) {
+  print(<span class="string">"你好！我是琛光E1 Mini\n"</span>);
+  print(<span class="string">"当前电量: "</span>); print(batteryPercent); print(<span class="string">"%\n"</span>);
+}
+<span class="keyword">else if</span> (cmd == <span class="string">"dance"</span>) {
+  print(<span class="string">"开始跳舞！\n"</span>);
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i < <span class="number">5</span>; i++) {
+    digitalWrite(LED_PIN, HIGH); delay(<span class="number">200</span>);
+    digitalWrite(LED_PIN, LOW); delay(<span class="number">200</span>);
+  }
+  print(<span class="string">"跳舞结束！\n"</span>);
+}`},
+    {n:35,t:"添加LED状态指示与电池预警功能",tag:"固件开发",
+     goal:["修改led.ino和battery.ino源码","实现根据飞行状态切换LED指示模式","添加低电量声光报警功能"],
+     content:["led.ino现有功能：基础LED亮灭控制","扩展功能设计：待机(慢闪)→已解锁(常亮)→飞行中(快闪)→低电量(双闪)→严重低电(连续快闪)","battery.ino修改：在电量检测循环中加入LED状态切换逻辑","可选扩展：添加蜂鸣器，低电量时蜂鸣报警"],
+     practice:"修改led.ino→添加状态LED控制函数→修改battery.ino→在低电量检测中调用LED报警→编译→烧录→测试不同电量级别的LED效果。",
+     homework:"记录你的LED状态系统设计，思考还能添加哪些状态指示（如陀螺仪校准中、Wi-Fi断连等）。",
+     time:["回顾 10min","设计 15min","开发+编译+测试 50min","总结 15min"],
+     steps:["待机模式：LED慢闪（1秒亮/1秒灭）","已解锁模式：LED常亮","飞行中：LED快闪（100ms亮/100ms灭）","低电量（<20%）：LED双闪（亮灭亮灭→灭2秒）","严重低电（<10%）：LED连续快闪"]},
+    {n:36,t:"飞行参数调优实战与对比测试",tag:"综合调试",
+     goal:["综合运用源码理解，修改PID参数源码","通过对比飞行测试找到最佳参数","体验「修改源码→编译→烧录→飞行测试」的完整迭代流程"],
+     content:["在源码中修改PID参数：board_config.h或parameters.ino中的默认值","调参方法论：一次只改一个参数→小步调整（±10%）→飞行测试→记录效果","P过大：高频震荡、电机嗡嗡响→降低P","P过小：反应迟钝、松软→增大P","D过大：电机抖动、噪声大→降低D","I过大：慢速振荡→降低I"],
+     practice:"记录当前PID参数→修改源码中的P值（增大10%）→编译→烧录→低空悬停测试→记录效果→再调整→找到最佳值。每位同学记录自己的最佳PID组合并对比飞行效果。",
+     homework:"撰写「固件修改报告」：记录所有修改内容、修改前后对比、最佳参数组合。",
+     time:["回顾 10min","方法论 15min","调参+飞行测试 50min","总结 15min"],
+     milestone:"🎉 里程碑：固件开发阶段完成！学生已能读懂CF-Drone飞控源码，修改网页界面、添加自定义命令、扩展LED功能、调整PID参数——真正做到了「修改飞控代码」。"}
+  ]},
+  {id:"module6",icon:"🐍",title:"模块六：Python控制与综合项目",range:"第 37-40 课",hours:"6h",goal:"用Python通过MAVLink控制E1 Mini，完成综合项目",color:"var(--m6)",lessons:[
+    {n:37,t:"Python + MAVLink：用代码连接E1 Mini",tag:"编程实操",
+     goal:["理解MAVLink协议的基本概念","安装pymavlink库并连接E1 Mini","用Python发送解锁指令"],
+     content:["MAVLink：无人机通信的通用协议，用消息(Message)格式传递指令和状态","CF-Drone固件支持MAVLink（见mavlink.ino）→可通过Python外部控制","环境准备：pip install pymavlink","连接方式：电脑Wi-Fi连接Drone_WIFI→Python通过UDP连接192.168.4.1","基本流程：创建连接→发送心跳包→解锁→发送指令→读取状态"],
+     practice:"学生安装pymavlink→编写连接脚本→电脑连接Drone_WIFI→运行脚本→观察E1 Mini是否解锁（电机怠速转动，摘桨测试）。",
+     homework:"整理MAVLink常用命令列表（解锁/锁定/设置模式等），准备下节课使用。",
+     time:["回顾 10min","理论 20min","编程+连接 45min","总结 15min"],
+     warn:"本课及后续课程操作E1 Mini时，先用摘桨方式测试代码，确认无误后再装桨飞行。",
+     code:`<span class="keyword">from</span> pymavlink <span class="keyword">import</span> mavutil
+
+<span class="comment"># 连接E1 Mini（通过Wi-Fi UDP）</span>
+conn = mavutil.mavlink_connection(<span class="string">'udpout:192.168.4.1:14550'</span>, input=<span class="keyword">False</span>)
+
+<span class="comment"># 发送心跳包</span>
+conn.mav.heartbeat_send(
+    mavutil.mavlink.MAV_TYPE_GCS,
+    mavutil.mavlink.MAV_AUTOPILOT_INVALID, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)
+
+<span class="comment"># 发送解锁命令</span>
+conn.mav.command_long_send(
+    conn.target_system, conn.target_component,
+    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+    <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)
+print(<span class="string">"已发送解锁指令！"</span>)`},
+    {n:38,t:"遥测数据读取与飞行状态监控面板",tag:"编程实操",
+     goal:["用Python读取E1 Mini的遥测数据（姿态/电池/状态）","编写实时监控面板程序","实现数据记录到文件"],
+     content:["接收MAVLink消息：conn.recv_match(type='ATTITUDE', blocking=True)","姿态数据：roll（横滚）/ pitch（俯仰）/ yaw（偏航）","电池数据：voltage（电压）/ remaining（剩余百分比）","系统状态：armed（是否解锁）/ mode（飞行模式）","数据记录：用Python文件操作将遥测数据保存为CSV"],
+     practice:"学生编写监控程序→连接E1 Mini→实时显示姿态和电池数据→手动转动E1 Mini观察数据变化→扩展功能：数据保存CSV + 低电量报警。",
+     homework:"将监控程序扩展为「飞行状态面板」：终端实时显示姿态角度、电池电量、解锁状态，并加颜色提示（绿色正常/黄色偏低/红色危险）。",
+     time:["回顾 10min","理论 15min","编程+测试 50min","总结 15min"],
+     code:`<span class="keyword">import</span> time
+<span class="keyword">from</span> pymavlink <span class="keyword">import</span> mavutil
+
+conn = mavutil.mavlink_connection(<span class="string">'udpout:192.168.4.1:14550'</span>)
+
+<span class="keyword">while True</span>:
+    msg = conn.recv_match(
+        type=[<span class="string">'ATTITUDE'</span>, <span class="string">'SYS_STATUS'</span>],
+        blocking=<span class="keyword">True</span>, timeout=<span class="number">1</span>)
+    <span class="keyword">if</span> msg <span class="keyword">is None</span>: <span class="keyword">continue</span>
+    <span class="keyword">if</span> msg.get_type() == <span class="string">'ATTITUDE'</span>:
+        print(f<span class="string">"Roll: {msg.roll:.1f}° Pitch: {msg.pitch:.1f}° Yaw: {msg.yaw:.1f}°"</span>)
+    <span class="keyword">elif</span> msg.get_type() == <span class="string">'SYS_STATUS'</span>:
+        bat = msg.voltage_battery / <span class="number">1000</span>
+        print(f<span class="string">"电池电压: {bat:.2f}V"</span>)
+    time.sleep(<span class="number">0.5</span>)`},
+    {n:39,t:"综合项目开发：自主飞行任务设计",tag:"项目开发",
+     goal:["综合运用固件修改 + Python控制完成一个完整项目","体验从需求到实现的完整开发流程","培养独立解决问题和调试的能力"],
+     content:["推荐项目方向（任选其一或自拟）：","项目A：一键起飞降落系统——Python脚本发送MAVLink指令实现自动起飞→悬停N秒→自动降落","项目B：飞行数据记录器——飞行中实时记录姿态/电压/电机数据到CSV，飞行后用Python生成数据曲线图","项目C：自定义PC遥控器——用Python+键盘按键制作PC端遥控器，通过MAVLink控制E1 Mini飞行","项目D：固件功能扩展——在CF-Drone固件中添加自定义飞行模式或新功能"],
+     practice:"学生选题（可个人或2人一组）→填写项目计划书→开始编码开发→教师巡场指导→先摘桨测试代码逻辑→确认无误后装桨飞行测试。",
+     homework:"完善项目代码，准备下节课展示。准备3分钟讲解（项目目标+技术方案+遇到的困难+解决方案）。",
+     time:["选题说明 15min","项目开发 60min","进度同步 15min"]},
+    {n:40,t:"项目展示与课程总结典礼",tag:"展示+总结",
+     goal:["公开展示项目成果，锻炼表达能力","回顾40节课的完整学习历程","颁发结业证书，合影留念"],
+     content:["展示环节：每人/每组3分钟讲解 + 现场演示","互相评价与提问","课程回顾：从认识ESP32到焊接PCB→从首飞到修改飞控源码→从Arduino到Python","未来展望：ESP32进阶、其他开源飞控、无人机行业方向"],
+     practice:"项目展示大会→同学互评→教师点评→颁发「E1 Mini无人机开发者」结业证书→合影留念→学生将亲手打造的E1 Mini带回家。",
+     homework:"你的E1 Mini完全属于你——固件是开源的，代码是你改过的，硬件是你焊的。继续探索，继续创造！",
+     time:["展示 50min","互评+总结 25min","颁奖合影 15min"],
+     milestone:"🎉 课程圆满完成！40节课，60小时——每位学生从零开始，亲手焊接组装了一台ESP32无人机，学会了Arduino和Python两种编程语言，读懂并修改了开源飞控源码，用Python通过MAVLink协议实现了外部编程控制。这是从「消费者」到「创造者」的完整蜕变。"}
+  ]}
+];
+
+// ===== Overview Cards =====
+const overviewData = [
+  {icon:"🧭",title:"一 · 基础入门",desc:"第1-5课 · 7.5h<br>无人机原理与ESP32入门",target:"module1",color:"var(--m1)"},
+  {icon:"🔧",title:"二 · 硬件制作",desc:"第6-16课 · 16.5h<br>从零件到飞行器",target:"module2",color:"var(--m2)"},
+  {icon:"🚀",title:"三 · 调试首飞",desc:"第17-22课 · 9h<br>校准、调试与首次飞行",target:"module3",color:"var(--m3)"},
+  {icon:"💻",title:"四 · Arduino编程",desc:"第23-30课 · 12h<br>C语言与ESP32开发",target:"module4",color:"var(--m4)"},
+  {icon:"⚙️",title:"五 · 固件开发",desc:"第31-36课 · 9h<br>飞控源码理解与定制",target:"module5",color:"var(--m5)"},
+  {icon:"🐍",title:"六 · Python控制",desc:"第37-40课 · 6h<br>MAVLink编程与综合项目",target:"module6",color:"var(--m6)"},
+];
+
+function renderOverview(){
+  const grid = document.getElementById('overviewGrid');
+  grid.innerHTML = overviewData.map(c=>`
+    <div class="overview-card" style="border-left-color:${c.color}" onclick="scrollToSection('${c.target}')">
+      <div class="icon">${c.icon}</div>
+      <div class="title">${c.title}</div>
+      <div class="desc">${c.desc}</div>
+    </div>`).join('');
+}
+
+// ===== Render Modules =====
+function renderModules(){
+  const container = document.getElementById('modulesContainer');
+  container.innerHTML = modules.map(mod=>`
+    <div class="section module ${mod.id}" id="${mod.id}">
+      <div class="module-header">
+        <span style="font-size:1.4em">${mod.icon}</span>
+        <h2>${mod.title}</h2>
+        <div class="info">${mod.range} · ${mod.hours} · ${mod.goal}</div>
+      </div>
+      <div class="module-body">
+        ${mod.lessons.map(ls=>renderLesson(ls,mod.id)).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function renderLesson(ls,modId){
+  let html = `<div class="lesson" data-module="${modId}" data-lesson="${ls.n}" data-search="${ls.t} ${ls.tag} ${(ls.content||[]).join(' ')} ${(ls.goal||[]).join(' ')} ${ls.practice||''} ${ls.homework||''}">
+    <div class="lesson-header" onclick="toggleLesson(this)">
+      <div class="lesson-num">${ls.n}</div>
+      <div class="lesson-title">${ls.t}</div>
+      <div class="lesson-tag">${ls.tag}</div>
+      <div class="lesson-toggle">▶</div>
+    </div>
+    <div class="lesson-body">
+      <div class="lesson-content">`;
+  
+  if(ls.goal){
+    html += `<h4>🎯 教学目标</h4><ul>${ls.goal.map(g=>`<li>${g}</li>`).join('')}</ul>`;
+  }
+  if(ls.content){
+    html += `<h4>📚 教学内容</h4><ul>${ls.content.map(c=>`<li>${c}</li>`).join('')}</ul>`;
+  }
+  if(ls.steps){
+    html += `<h4>📋 操作步骤</h4><ol>${ls.steps.map(s=>`<li>${s}</li>`).join('')}</ol>`;
+  }
+  if(ls.code){
+    html += `<h4>💻 代码示例</h4><div class="code-block">${ls.code}</div>`;
+  }
+  if(ls.practice){
+    html += `<h4>🛠 实践活动</h4><p>${ls.practice}</p>`;
+  }
+  if(ls.tip){
+    html += `<div class="tip-box"><strong>💡 提示：</strong>${ls.tip}</div>`;
+  }
+  if(ls.warn){
+    html += `<div class="warn-box"><strong>⚠️ 安全：</strong>${ls.warn}</div>`;
+  }
+  if(ls.milestone){
+    html += `<div class="milestone"><strong>${ls.milestone}</strong></div>`;
+  }
+  if(ls.homework){
+    html += `<h4>📝 课后任务</h4><p>${ls.homework}</p>`;
+  }
+  if(ls.time){
+    html += `<div class="time-block">${ls.time.map(t=>`<span class="time-chip">${t}</span>`).join('')}</div>`;
+  }
+  
+  html += `</div></div></div>`;
+  return html;
+}
+
+// ===== Interactivity =====
+function toggleLesson(header){
+  const lesson = header.parentElement;
+  lesson.classList.toggle('expanded');
+  
+  // Update progress
+  if(lesson.classList.contains('expanded')){
+    markLessonDone(lesson.dataset.lesson);
+  }
+}
+
+// ===== Progress Tracking =====
+let completedLessons = JSON.parse(localStorage.getItem('e1mini_progress')||'[]');
+
+function markLessonDone(n){
+  n = parseInt(n);
+  if(!completedLessons.includes(n)){
+    completedLessons.push(n);
+    localStorage.setItem('e1mini_progress', JSON.stringify(completedLessons));
+    updateProgress();
+  }
+}
+
+function updateProgress(){
+  const total = 40;
+  const done = completedLessons.length;
+  const pct = Math.round(done/total*100);
+  document.getElementById('progressCount').textContent = done;
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressLabel').textContent = done>0 ? `已完成 ${pct}% — 继续加油！` : '点击课程标记为已学';
+}
+
+// ===== Search =====
+function handleSearch(val){
+  val = val.toLowerCase().trim();
+  const lessons = document.querySelectorAll('.lesson');
+  let visibleCount = 0;
+  lessons.forEach(ls=>{
+    if(!val){
+      ls.classList.remove('hidden');
+      visibleCount++;
+    } else {
+      const searchText = ls.dataset.search.toLowerCase();
+      if(searchText.includes(val)){
+        ls.classList.remove('hidden');
+        ls.classList.add('expanded');
+        visibleCount++;
+      } else {
+        ls.classList.add('hidden');
+      }
+    }
+  });
+}
+
+// ===== Navigation =====
+function scrollToSection(id){
+  const el = document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  // close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// Sidebar click
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    const target = item.dataset.target;
+    if(target) scrollToSection(target);
+  });
+});
+
+// Scrollspy
+window.addEventListener('scroll',()=>{
+  const sections = ['overview','platform','module1','module2','module3','module4','module5','module6','assessment','tips'];
+  let current = '';
+  for(const id of sections){
+    const el = document.getElementById(id);
+    if(el && el.getBoundingClientRect().top < 120) current = id;
+  }
+  document.querySelectorAll('.nav-item').forEach(item=>{
+    item.classList.toggle('active', item.dataset.target===current);
+  });
+  
+  // Back to top
+  document.getElementById('backTop').classList.toggle('show', window.scrollY>400);
+});
+
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'})}
+
+// ===== Theme =====
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('e1mini_theme', next);
+  document.getElementById('themeBtn').textContent = next==='dark'?'☀️':'🌙';
+}
+
+// Load theme
+const savedTheme = localStorage.getItem('e1mini_theme');
+if(savedTheme==='dark'){
+  document.documentElement.setAttribute('data-theme','dark');
+  document.getElementById('themeBtn').textContent='☀️';
+}
+
+// ===== Mobile sidebar =====
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+// ===== Init =====
+renderOverview();
+renderModules();
+updateProgress();
+</script>
+</body>
+</html>
